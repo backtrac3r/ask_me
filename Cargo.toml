@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
 teloxide = "*"
-rust-bert = { version = "*", features = ["download-libtorch"] }
+llm = { git = "https://github.com/rustformers/llm" , branch = "main" }
 dotenvy = "*"
+rand = "*"
