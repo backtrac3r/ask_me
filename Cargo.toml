@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
 teloxide = "*"
-rust-bert = "*"
+rust-bert = { version = "*", features = ["download-libtorch"] }
 dotenvy = "*"
