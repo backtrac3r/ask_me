@@ -1,7 +1,16 @@
-use llm::{InferenceSessionConfig, Model, Prompt, InferenceResponse};
-use tokio::sync::Mutex;
-use std::{path::PathBuf, sync::{Arc, mpsc::{SyncSender, sync_channel, Receiver}}};
+use llm::{
+    load_dynamic, load_progress_callback_stdout, InferenceResponse, InferenceSessionConfig, Model,
+    ModelArchitecture, ModelParameters, Prompt,
+};
+use std::{
+    path::PathBuf,
+    sync::{
+        mpsc::{sync_channel, Receiver, SyncSender},
+        Arc,
+    },
+};
 use teloxide::prelude::*;
+use tokio::sync::Mutex;
 
 use crate::helpers::update_message;
 
@@ -10,15 +19,15 @@ pub struct Config {
 }
 
 impl Config {
-    pub async fn get_ans(&self, bot: &Bot, msg: &Message) {
-        let session = self
+    pub fn get_ans(&self, bot: &Bot, msg: &Message) {
+        let mut session = self
             .llm_model
             .start_session(InferenceSessionConfig::default());
 
         let chat_id = msg.chat.id;
         let txt = msg.text().unwrap_or_default();
 
-        session.infer::<std::convert::Infallible>(
+        let res = session.infer::<std::convert::Infallible>(
             self.llm_model.as_ref(),
             &mut rand::thread_rng(),
             &llm::InferenceRequest {
@@ -28,11 +37,22 @@ impl Config {
                 maximum_token_count: None,
             },
             &mut Default::default(),
-            |r| {
-                update_message(, , );
+            |t| {
+                match t {
+                    InferenceResponse::SnapshotToken(t) => print!("{t}"),
+                    InferenceResponse::PromptToken(t) => print!("{t}"),
+                    InferenceResponse::InferredToken(t) => print!("{t}"),
+                    InferenceResponse::EotToken => todo!(),
+                }
+
                 Ok(llm::InferenceFeedback::Continue)
             },
         );
+
+        match res {
+            Ok(result) => println!("\n\nInference stats:\n{result}"),
+            Err(err) => println!("\n{err}"),
+        }
     }
 
     pub fn init() -> Self {
@@ -41,12 +61,12 @@ impl Config {
 
         let now = std::time::Instant::now();
 
-        let llm_model = llm::load_dynamic(
-            Some(llm::ModelArchitecture::Llama),
+        let llm_model = load_dynamic(
+            Some(ModelArchitecture::Llama),
             &model_path,
             vocabulary_source,
-            Default::default(),
-            llm::load_progress_callback_stdout,
+            ModelParameters::default(),
+            load_progress_callback_stdout,
         )
         .unwrap();
 

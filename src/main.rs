@@ -22,7 +22,7 @@ async fn main() {
 
     let cfg = Arc::new(cfg::Config::init());
 
-    let models_cfg = llm::Config::init();
+    let models_cfg = Arc::new(llm::Config::init());
 
     Dispatcher::builder(
         bot,
@@ -43,7 +43,7 @@ async fn main() {
 pub async fn start(
     bot: Bot,
     _dialogue: MyDialogue,
-    models_cfg: llm::Config,
+    models_cfg: Arc<llm::Config>,
     cfg: Arc<cfg::Config>,
     msg: Message,
 ) -> Result<(), BotErr> {
@@ -71,7 +71,7 @@ pub async fn start(
         return Ok(());
     }
 
-    models_cfg.get_ans(&bot, &msg).await;
+    models_cfg.get_ans(&bot, &msg);
 
     Ok(())
 }
